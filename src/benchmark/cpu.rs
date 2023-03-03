@@ -2,8 +2,8 @@ pub mod arithmetic;
 pub mod compression;
 pub mod cryptography;
 pub mod decompression;
-pub mod simd;
 pub mod prelude;
+pub mod simd;
 
 #[derive(Debug, Default)]
 pub struct OneAndManyThread<T> {
