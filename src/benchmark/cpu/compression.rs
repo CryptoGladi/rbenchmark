@@ -1,14 +1,13 @@
-use crate::{benchmark::Benchmark, benchmark_loop};
-use rand::prelude::*;
-use std::{
-    sync::{mpsc::channel, Arc},
-    time::Instant,
+use std::sync::Arc;
+use crate::{
+    benchmark::Benchmark, benchmark_loop_for_multithread, benchmark_loop_for_singlethread,
 };
-use threadpool::ThreadPool;
+use rand::prelude::*;
 
 #[derive(Debug)]
 pub struct BenchmarkCompression {
     pub size_byte_for_compession: u128,
+    pub preset: u32,
     buffer_for_compession: Vec<u8>,
 }
 
@@ -22,48 +21,32 @@ impl Default for BenchmarkCompression {
 
         Self {
             size_byte_for_compession,
+            preset: lzma::EXTREME_PRESET,
             buffer_for_compession,
         }
     }
 }
 
-enum Message {
-    DoneOneJob,
-}
-
 impl Benchmark for BenchmarkCompression {
     fn run_singlethread(&self, time_for_run: std::time::Duration) -> u128 {
-        benchmark_loop!(time_for_run, {
-            let _ = lzma::compress(&self.buffer_for_compession[..], lzma::EXTREME_PRESET).unwrap();
+        benchmark_loop_for_singlethread!(time_for_run, {
+            let i = lzma::compress(&self.buffer_for_compession[..], self.preset).unwrap();
+            drop(i);
         });
     }
 
     fn run_multithread(&self, time_for_run: std::time::Duration) -> u128 {
-        let pool = ThreadPool::new(num_cpus::get());
-        let (tx, rx) = channel();
-
-        let start = Instant::now();
         let buffer_for_compession = Arc::new(self.buffer_for_compession.clone());
-        for _ in 0..9999999 {
-            let tx = tx.clone();
-            let buffer_for_compession = buffer_for_compession.clone();
+        let preset = Arc::new(self.preset.clone());
 
-            pool.execute(move || {
-                let _ = lzma::compress(&buffer_for_compession[..], lzma::EXTREME_PRESET).unwrap();
-                tx.send(Message::DoneOneJob).unwrap();
-            });
-        }
-
-        let mut points = 0u128;
-        loop {
-            match rx.recv().unwrap() {
-                Message::DoneOneJob => points += 1,
-            }
-
-            if start.elapsed() >= time_for_run {
-                return points;
-            }
-        }
+        benchmark_loop_for_multithread!(
+            time_for_run,
+            code: {
+                let i = lzma::compress(&buffer_for_compession[..], *preset).unwrap();
+                drop(i);
+            },
+            move: buffer_for_compession, preset
+        );
     }
 
     fn name(&self) -> &'static str {

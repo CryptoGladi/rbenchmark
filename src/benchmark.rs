@@ -1,6 +1,12 @@
-use std::time::{Duration, Instant};
+use std::{
+    collections::HashMap,
+    time::{Duration, Instant},
+};
+
+use self::macros::vec_box;
 
 pub mod cpu;
+pub mod macros;
 
 pub trait Benchmark {
     fn run_singlethread(&self, time_for_run: Duration) -> u128;
@@ -10,59 +16,44 @@ pub trait Benchmark {
     fn name(&self) -> &'static str;
 }
 
-#[macro_export]
-macro_rules! benchmark_loop {
-    ($time_for_run:ident, $code:block) => {
-        let start = std::time::Instant::now();
-        let mut count = 0u128;
-
-        loop {
-            $code
-
-            count += 1;
-            if start.elapsed() >= $time_for_run {
-                return count;
-            }
-        }
-    };
-}
-
-pub use benchmark_loop;
-
-#[macro_export]
-macro_rules! impl_benchmark {
-    ($struct:ident, singlethread: $code:block, multithread: $code_multithread:block) => {
-        impl crate::benchmark::Benchmark for $struct {
-            fn run_singlethread(&self, time_for_run: std::time::Duration) -> u128 {
-                crate::benchmark::benchmark_loop!(time_for_run, $code);
-            }
-
-            fn run_multithread(&self, time_for_run: std::time::Duration) -> u128 {
-                crate::benchmark::benchmark_loop!(time_for_run, $code_multithread);
-            }
-        }
-    };
-}
-
-pub use impl_benchmark;
-
 pub struct BenchmarkRunner {
     benchmarks: Vec<Box<dyn Benchmark>>,
 }
 
 impl Default for BenchmarkRunner {
     fn default() -> Self {
+        use cpu::prelude::*;
+
         Self {
-            benchmarks: vec![Box::new(cpu::prelude::BenchmarkCompression::default())],
+            benchmarks: vec_box![BenchmarkCompression::default(), BenchmarkDecompression::default()],
         }
     }
 }
 
+#[derive(Debug, Default)]
+pub struct InfoOneBench {
+    singlethread_points: u128,
+    multithread_points: u128,
+}
+
 #[derive(Debug)]
-pub struct Points {
-    pub singlethread: u128,
-    pub multithread: u128,
+pub struct Info<'a> {
     pub time: Duration,
+    pub info: HashMap<&'a str, InfoOneBench>,
+}
+
+impl Info<'_> {
+    pub fn total_singlethread_points(&self) -> u128 {
+        self.info.iter().map(|x| x.1.singlethread_points).sum()
+    }
+
+    pub fn total_multithread_points(&self) -> u128 {
+        self.info.iter().map(|x| x.1.multithread_points).sum()
+    }
+
+    pub fn total_points(&self) -> u128 {
+        self.total_multithread_points() + self.total_singlethread_points()
+    }
 }
 
 pub enum Progress<'a> {
@@ -73,23 +64,40 @@ pub enum Progress<'a> {
 }
 
 impl BenchmarkRunner {
-    pub fn run_all(&self, time_for_run_one_bench: Duration) -> Points {
+    pub fn run_all(&self, time_for_run_one_bench: Duration) -> Info {
         let start = Instant::now();
+        let mut info_for_any_bench: HashMap<&str, InfoOneBench> =
+            HashMap::with_capacity(self.benchmarks.len() * 2);
 
-        let mut points_singlethread = 0;
-        self.benchmarks
-            .iter()
-            .for_each(|bench| points_singlethread += bench.run_singlethread(time_for_run_one_bench));
+        self.benchmarks.iter().for_each(|bench| {
+            let points = bench.run_singlethread(time_for_run_one_bench);
+            info_for_any_bench
+                .entry(bench.name())
+                .and_modify(|x| x.singlethread_points += points)
+                .or_default();
+            info_for_any_bench
+                .entry(bench.name())
+                .and_modify(|x| x.singlethread_points += points)
+                .or_insert(InfoOneBench {
+                    singlethread_points: points,
+                    multithread_points: 0,
+                });
+        });
 
-        let mut points_multithread = 0;
-        self.benchmarks
-            .iter()
-            .for_each(|bench| points_multithread += bench.run_multithread(time_for_run_one_bench));
+        self.benchmarks.iter().for_each(|bench| {
+            let points = bench.run_multithread(time_for_run_one_bench);
+            info_for_any_bench
+                .entry(bench.name())
+                .and_modify(|x| x.multithread_points += points)
+                .or_insert(InfoOneBench {
+                    singlethread_points: 0,
+                    multithread_points: points,
+                });
+        });
 
-        return Points {
-            multithread: points_multithread,
-            singlethread: points_singlethread,
+        return Info {
             time: start.elapsed(),
+            info: info_for_any_bench,
         };
     }
 
@@ -97,27 +105,40 @@ impl BenchmarkRunner {
         &self,
         time_for_run_one_bench: Duration,
         mut callback: impl FnMut(Progress),
-    ) -> Points {
+    ) -> Info {
         let start = Instant::now();
+        let mut info_for_any_bench: HashMap<&str, InfoOneBench> =
+            HashMap::with_capacity(self.benchmarks.len() * 2);
 
-        let mut points_singlethread = 0;
         self.benchmarks.iter().for_each(|bench| {
             callback(Progress::StartingSinglethreadBenchmark(bench));
-            points_singlethread += bench.run_singlethread(time_for_run_one_bench);
+            let points = bench.run_singlethread(time_for_run_one_bench);
+            info_for_any_bench
+                .entry(bench.name())
+                .and_modify(|x| x.singlethread_points += points)
+                .or_insert(InfoOneBench {
+                    singlethread_points: points,
+                    multithread_points: 0,
+                });
             callback(Progress::DoneSinglethreadBenchmark(bench));
         });
 
-        let mut points_multithread = 0;
         self.benchmarks.iter().for_each(|bench| {
             callback(Progress::StartingMultithreadBenchmark(bench));
-            points_multithread += bench.run_multithread(time_for_run_one_bench);
+            let points = bench.run_multithread(time_for_run_one_bench);
+            info_for_any_bench
+                .entry(bench.name())
+                .and_modify(|x| x.multithread_points += points)
+                .or_insert(InfoOneBench {
+                    singlethread_points: 0,
+                    multithread_points: points,
+                });
             callback(Progress::DoneMultithreadBenchmark(bench));
         });
 
-        return Points {
-            multithread: points_multithread,
-            singlethread: points_singlethread,
+        return Info {
             time: start.elapsed(),
+            info: info_for_any_bench,
         };
     }
 }
