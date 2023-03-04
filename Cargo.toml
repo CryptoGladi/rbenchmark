@@ -7,8 +7,8 @@ edition = "2021"
 byte-unit = "4"
 num_cpus = "1"
 rand = "0.8"
-rust-lzma = "0.5"
-threadpool = "1.8"
+threadpool = "1"
+lzma-rs = "0.3"
 
 [profile.release]
 opt-level = 3

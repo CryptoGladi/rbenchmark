@@ -38,7 +38,8 @@ macro_rules! benchmark_loop_for_multithread {
         let start = std::time::Instant::now();
         for _ in 0..9999999 {
             let tx = tx.clone();
-            $(let $for_move = $for_move.clone();)*
+
+            $(let mut $for_move = $for_move.clone();)*
 
             pool.execute(move || {
                 $code
