@@ -4,65 +4,60 @@ macro_rules! vec_box {
     };
 }
 
+use std::{time::{Duration, Instant}, sync::Arc};
+
 pub(crate) use vec_box;
 
-#[macro_export]
-macro_rules! benchmark_loop_for_singlethread {
-    ($time_for_run:ident, $code:block) => {
-        let start = std::time::Instant::now();
-        let mut count = 0u128;
+pub fn benchmark_loop_for_singlethread(time_for_run: Duration, code: &Box<dyn Benchmark>) -> u128 {
+    let start = Instant::now();
+    let mut count = 0u128;
 
-        loop {
-            $code
+    loop {
+        code.run_iter();
 
-            count += 1;
-            if start.elapsed() >= $time_for_run {
-                return count;
-            }
+        count += 1;
+        if start.elapsed() >= time_for_run {
+            return count;
         }
-    };
+    }
 }
 
-pub use benchmark_loop_for_singlethread;
+pub fn benchmark_loop_for_multithread<'a>(time_for_run: Duration, code: &'a Arc<&'a Box<dyn Benchmark + Send + Sync>>) -> u128 {
+    enum Message {
+        DoneOneJob
+    }
 
-#[macro_export]
-macro_rules! benchmark_loop_for_multithread {
-    ($time_for_run:ident, code: $code:block, move: $($for_move:ident),*) => {
-        enum Message {
-            DoneOneJob
-        }
+    let pool = threadpool::ThreadPool::new(num_cpus::get());
+    let (tx, rx) = std::sync::mpsc::channel();
 
-        let pool = threadpool::ThreadPool::new(num_cpus::get());
-        let (tx, rx) = std::sync::mpsc::channel();
+    let start = std::time::Instant::now();
+    for _ in 0..9999999 {
+        let tx = tx.clone();
+        let code = code.clone();
 
-        let start = std::time::Instant::now();
-        for _ in 0..9999999 {
-            let tx = tx.clone();
+        /* TODO 
+        pool.execute(move || {
+            code.run_iter();
 
-            $(let mut $for_move = $for_move.clone();)*
-
-            pool.execute(move || {
-                $code
-
-                #[allow(unused_must_use)]
-                {
-                    tx.send(Message::DoneOneJob);
-                }
-            });
-        }
-
-        let mut points = 0u128;
-        loop {
-            match rx.recv().unwrap() {
-                Message::DoneOneJob => points += 1
+            #[allow(unused_must_use)]
+            {
+                tx.send(Message::DoneOneJob);
             }
+        });
+        */
+    }
 
-            if start.elapsed() >= $time_for_run {
-                drop(pool);
-                return points;
-            }
+    let mut points = 0u128;
+    loop {
+        match rx.recv().unwrap() {
+            Message::DoneOneJob => points += 1
         }
-    };
+
+        if start.elapsed() >= time_for_run {
+            drop(pool);
+            return points;
+        }
+    }
 }
 
 #[macro_export]
@@ -81,3 +76,5 @@ macro_rules! impl_benchmark {
 }
 
 pub use impl_benchmark;
+
+use super::Benchmark;

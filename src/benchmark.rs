@@ -9,9 +9,7 @@ pub mod cpu;
 pub mod macros;
 
 pub trait Benchmark {
-    fn run_singlethread(&self, time_for_run: Duration) -> u128;
-
-    fn run_multithread(&self, time_for_run: Duration) -> u128;
+    fn run_iter(&self);
 
     fn name(&self) -> &'static str;
 }
@@ -25,7 +23,10 @@ impl Default for BenchmarkRunner {
         use cpu::prelude::*;
 
         Self {
-            benchmarks: vec_box![BenchmarkCompression::default(), BenchmarkDecompression::default()],
+            benchmarks: vec_box![
+                BenchmarkCompression::default(),
+                BenchmarkDecompression::default()
+            ],
         }
     }
 }
@@ -70,11 +71,8 @@ impl BenchmarkRunner {
             HashMap::with_capacity(self.benchmarks.len() * 2);
 
         self.benchmarks.iter().for_each(|bench| {
-            let points = bench.run_singlethread(time_for_run_one_bench);
-            info_for_any_bench
-                .entry(bench.name())
-                .and_modify(|x| x.singlethread_points += points)
-                .or_default();
+            let points = macros::benchmark_loop_for_singlethread(time_for_run_one_bench, bench);
+
             info_for_any_bench
                 .entry(bench.name())
                 .and_modify(|x| x.singlethread_points += points)
@@ -85,7 +83,8 @@ impl BenchmarkRunner {
         });
 
         self.benchmarks.iter().for_each(|bench| {
-            let points = bench.run_multithread(time_for_run_one_bench);
+            let points = macros::benchmark_loop_for_singlethread(time_for_run_one_bench, bench); // TODO
+
             info_for_any_bench
                 .entry(bench.name())
                 .and_modify(|x| x.multithread_points += points)
@@ -112,7 +111,7 @@ impl BenchmarkRunner {
 
         self.benchmarks.iter().for_each(|bench| {
             callback(Progress::StartingSinglethreadBenchmark(bench));
-            let points = bench.run_singlethread(time_for_run_one_bench);
+            let points = macros::benchmark_loop_for_singlethread(time_for_run_one_bench, bench);
             info_for_any_bench
                 .entry(bench.name())
                 .and_modify(|x| x.singlethread_points += points)
@@ -125,7 +124,7 @@ impl BenchmarkRunner {
 
         self.benchmarks.iter().for_each(|bench| {
             callback(Progress::StartingMultithreadBenchmark(bench));
-            let points = bench.run_multithread(time_for_run_one_bench);
+            let points = macros::benchmark_loop_for_singlethread(time_for_run_one_bench, bench); // TODO
             info_for_any_bench
                 .entry(bench.name())
                 .and_modify(|x| x.multithread_points += points)
@@ -150,6 +149,6 @@ mod tests {
     #[test]
     fn run_benchmark_runner() {
         let runner = BenchmarkRunner::default();
-        runner.run_all(Duration::from_secs(1));
+        runner.run_all(Duration::from_millis(1));
     }
 }
