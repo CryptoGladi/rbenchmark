@@ -29,6 +29,7 @@ impl Default for BenchmarkRunner {
                 BenchmarkCompression::default(),
                 BenchmarkDecompression::default(),
                 BenchmarkCryptography::default()
+                //BenchmarkArithmetic::default()
             ],
             time_for_run_one_bench: Duration::from_secs(5),
             num_cpus: num_cpus::get(),

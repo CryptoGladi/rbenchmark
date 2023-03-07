@@ -7,6 +7,7 @@ macro_rules! vec_box {
     };
 }
 
+use crossbeam::channel::TryRecvError;
 pub(crate) use vec_box;
 
 pub fn benchmark_loop_for_singlethread(time_for_run: Duration, bench: &dyn Benchmark) -> u128 {
@@ -30,17 +31,20 @@ pub fn benchmark_loop_for_multithread(
 ) -> u128 {
     let mut count = 0;
     let (done_job, run_job) = crossbeam::channel::unbounded();
+    let (stop_job, job_is_stopped) = crossbeam::channel::unbounded::<()>();
     let start = Instant::now();
 
-    let code_for_thread = || {
-        bench.run_iter();
-        done_job.send(1).unwrap();
-    };
-
-    crossbeam::scope(|s| {
+    crossbeam::scope(|s| { // TODO Лучше создать все потоки, а потом тупо ждать приказа завершения
         for _ in 0..num_cpus {
             s.spawn(|_| {
-                code_for_thread();
+                loop {
+                    bench.run_iter();
+                    done_job.send(1).unwrap();
+
+                    if let Err(TryRecvError::Disconnected) = job_is_stopped.try_recv() {
+                        break;
+                    }
+                }
             });
         }
 
@@ -49,12 +53,9 @@ pub fn benchmark_loop_for_multithread(
                 count += 1;
 
                 if start.elapsed() >= time_for_run {
+                    drop(stop_job);
                     break;
                 }
-
-                s.spawn(|_| {
-                    code_for_thread();
-                });
             }
         }
     })
