@@ -2,7 +2,7 @@ use crate::{
     benchmark::Benchmark,
 };
 use rand::prelude::*;
-use std::{io::Cursor, sync::Arc};
+use std::{io::Cursor};
 
 #[derive(Debug)]
 pub struct BenchmarkDecompression {

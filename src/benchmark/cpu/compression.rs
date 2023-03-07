@@ -3,8 +3,7 @@ use crate::{
 };
 use rand::prelude::*;
 use std::{
-    io::{BufReader, BufWriter, Cursor},
-    sync::Arc,
+    io::{BufReader, BufWriter, Cursor}
 };
 
 #[derive(Debug, Clone)]

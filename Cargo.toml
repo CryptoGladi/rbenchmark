@@ -9,6 +9,7 @@ num_cpus = "1"
 rand = "0.8"
 threadpool = "1"
 lzma-rs = "0.3"
+crossbeam = { version = "0.8.2", features = ["crossbeam-channel"] }
 
 [profile.release]
 opt-level = 3

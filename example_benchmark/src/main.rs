@@ -1,12 +1,10 @@
-use std::time::Duration;
-
 use rbenchmark::prelude::*;
 
 fn main() {
     let runner = BenchmarkRunner::default();
 
     println!("Start all benchmark!");
-    let info = runner.run_all_with_callback(Duration::from_secs(3), |progress| match progress {
+    let info = runner.run_all_with_callback(|progress| match progress {
         StartingSinglethreadBenchmark(bench) => {
             println!("Starting singlethread benchmark: {}...", bench.name())
         }
