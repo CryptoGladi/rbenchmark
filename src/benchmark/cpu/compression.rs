@@ -1,10 +1,6 @@
-use crate::{
-    benchmark::Benchmark, 
-};
+use crate::benchmark::Benchmark;
 use rand::prelude::*;
-use std::{
-    io::{BufReader, BufWriter, Cursor}
-};
+use std::io::{BufReader, BufWriter, Cursor};
 
 #[derive(Debug)]
 pub struct StorageBuffer {
@@ -17,9 +13,7 @@ impl StorageBuffer {
         let mut buffer = vec![0u8; size_byte_for_compession as usize];
         buffer.shuffle(&mut rng);
 
-        Self {
-            buffer
-        }
+        Self { buffer }
     }
 }
 
@@ -41,7 +35,7 @@ impl Default for BenchmarkCompression {
 
         Self {
             size_byte_for_compession: size,
-            buffer_for_compession: StorageBuffer::new(size)
+            buffer_for_compession: StorageBuffer::new(size),
         }
     }
 }
@@ -61,7 +55,11 @@ impl Benchmark for BenchmarkCompression {
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
     use super::*;
 
+    #[test]
+    fn run_iter() {
+        let bench = BenchmarkCompression::default();
+        bench.run_iter();
+    }
 }

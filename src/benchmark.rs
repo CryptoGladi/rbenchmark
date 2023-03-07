@@ -31,7 +31,7 @@ impl Default for BenchmarkRunner {
                 BenchmarkCryptography::default()
             ],
             time_for_run_one_bench: Duration::from_secs(5),
-            num_cpus: num_cpus::get()
+            num_cpus: num_cpus::get(),
         }
     }
 }
@@ -63,10 +63,10 @@ impl Info<'_> {
 }
 
 pub enum Progress<'a> {
-    StartingSinglethreadBenchmark(&'a Box<dyn Benchmark>),
-    DoneSinglethreadBenchmark(&'a Box<dyn Benchmark>),
-    StartingMultithreadBenchmark(&'a Box<dyn Benchmark>),
-    DoneMultithreadBenchmark(&'a Box<dyn Benchmark>),
+    StartingSinglethreadBenchmark(&'a dyn Benchmark),
+    DoneSinglethreadBenchmark(&'a dyn Benchmark),
+    StartingMultithreadBenchmark(&'a dyn Benchmark),
+    DoneMultithreadBenchmark(&'a dyn Benchmark),
 }
 
 impl BenchmarkRunner {
@@ -76,7 +76,8 @@ impl BenchmarkRunner {
             HashMap::with_capacity(self.benchmarks.len() * 2);
 
         self.benchmarks.iter().for_each(|bench| {
-            let points = macros::benchmark_loop_for_singlethread(self.time_for_run_one_bench, bench);
+            let points =
+                macros::benchmark_loop_for_singlethread(self.time_for_run_one_bench, bench.as_ref());
 
             info_for_any_bench
                 .entry(bench.name())
@@ -88,7 +89,11 @@ impl BenchmarkRunner {
         });
 
         self.benchmarks.iter().for_each(|bench| {
-            let points = macros::benchmark_loop_for_multithread(self.time_for_run_one_bench, bench, self.num_cpus); // TODO
+            let points = macros::benchmark_loop_for_multithread(
+                self.time_for_run_one_bench,
+                bench.as_ref(),
+                self.num_cpus,
+            ); // TODO
 
             info_for_any_bench
                 .entry(bench.name())
@@ -99,23 +104,21 @@ impl BenchmarkRunner {
                 });
         });
 
-        return Info {
+        Info {
             time: start.elapsed(),
             info: info_for_any_bench,
-        };
+        }
     }
 
-    pub fn run_all_with_callback(
-        &self,
-        mut callback: impl FnMut(Progress),
-    ) -> Info {
+    pub fn run_all_with_callback(&self, mut callback: impl FnMut(Progress)) -> Info {
         let start = Instant::now();
         let mut info_for_any_bench: HashMap<&str, InfoOneBench> =
             HashMap::with_capacity(self.benchmarks.len() * 2);
 
         self.benchmarks.iter().for_each(|bench| {
-            callback(Progress::StartingSinglethreadBenchmark(bench));
-            let points = macros::benchmark_loop_for_singlethread(self.time_for_run_one_bench, bench);
+            callback(Progress::StartingSinglethreadBenchmark(bench.as_ref()));
+            let points =
+                macros::benchmark_loop_for_singlethread(self.time_for_run_one_bench, bench.as_ref());
             info_for_any_bench
                 .entry(bench.name())
                 .and_modify(|x| x.singlethread_points += points)
@@ -123,12 +126,16 @@ impl BenchmarkRunner {
                     singlethread_points: points,
                     multithread_points: 0,
                 });
-            callback(Progress::DoneSinglethreadBenchmark(bench));
+            callback(Progress::DoneSinglethreadBenchmark(bench.as_ref()));
         });
 
         self.benchmarks.iter().for_each(|bench| {
-            callback(Progress::StartingMultithreadBenchmark(bench));
-            let points = macros::benchmark_loop_for_multithread(self.time_for_run_one_bench, bench, self.num_cpus); // TODO
+            callback(Progress::StartingMultithreadBenchmark(bench.as_ref()));
+            let points = macros::benchmark_loop_for_multithread(
+                self.time_for_run_one_bench,
+                bench.as_ref(),
+                self.num_cpus,
+            ); // TODO
             info_for_any_bench
                 .entry(bench.name())
                 .and_modify(|x| x.multithread_points += points)
@@ -136,13 +143,13 @@ impl BenchmarkRunner {
                     singlethread_points: 0,
                     multithread_points: points,
                 });
-            callback(Progress::DoneMultithreadBenchmark(bench));
+            callback(Progress::DoneMultithreadBenchmark(bench.as_ref()));
         });
 
-        return Info {
+        Info {
             time: start.elapsed(),
             info: info_for_any_bench,
-        };
+        }
     }
 }
 
@@ -156,7 +163,7 @@ mod tests {
             time_for_run_one_bench: Duration::from_millis(1),
             ..Default::default()
         };
-        
+
         runner.run_all();
     }
 }

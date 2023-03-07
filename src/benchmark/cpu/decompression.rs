@@ -1,8 +1,6 @@
-use crate::{
-    benchmark::Benchmark,
-};
+use crate::benchmark::Benchmark;
 use rand::prelude::*;
-use std::{io::Cursor};
+use std::io::Cursor;
 
 #[derive(Debug)]
 pub struct BenchmarkDecompression {
@@ -40,5 +38,16 @@ impl Benchmark for BenchmarkDecompression {
 
     fn name(&self) -> &'static str {
         "decompression"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn run_iter() {
+        let bench = BenchmarkDecompression::default();
+        bench.run_iter();
     }
 }
