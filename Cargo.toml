@@ -10,6 +10,7 @@ rand = "0.8"
 threadpool = "1"
 lzma-rs = "0.3"
 crossbeam = { version = "0.8.2", features = ["crossbeam-channel"] }
+sha2 = "0.10.6"
 
 [profile.release]
 opt-level = 3

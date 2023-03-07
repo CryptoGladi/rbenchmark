@@ -27,7 +27,8 @@ impl Default for BenchmarkRunner {
         Self {
             benchmarks: vec_box![
                 BenchmarkCompression::default(),
-                BenchmarkDecompression::default()
+                BenchmarkDecompression::default(),
+                BenchmarkCryptography::default()
             ],
             time_for_run_one_bench: Duration::from_secs(5),
             num_cpus: num_cpus::get()

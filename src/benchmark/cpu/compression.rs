@@ -6,7 +6,7 @@ use std::{
     io::{BufReader, BufWriter, Cursor}
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct StorageBuffer {
     buffer: Vec<u8>,
 }
