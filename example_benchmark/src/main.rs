@@ -4,18 +4,7 @@ fn main() {
     let runner = BenchmarkRunner::default();
 
     println!("Start all benchmark!");
-    let info = runner.run_all_with_callback(|progress| match progress {
-        StartingSinglethreadBenchmark(bench) => {
-            println!("Starting singlethread benchmark: {}...", bench.name())
-        }
-        DoneSinglethreadBenchmark(bench) => {
-            println!("Done singlethread benchmark: {}", bench.name())
-        }
-        StartingMultithreadBenchmark(bench) => {
-            println!("Starting multithread benchmark: {}...", bench.name())
-        }
-        DoneMultithreadBenchmark(bench) => println!("Done multithread benchmark: {}", bench.name()),
-    });
+    let info = runner.run_all().unwrap();
 
     println!("Info about test: {:?}", info);
     println!("Total points: {}", info.total_points());

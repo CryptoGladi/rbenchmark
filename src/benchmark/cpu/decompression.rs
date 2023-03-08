@@ -30,10 +30,11 @@ impl Default for BenchmarkDecompression {
 }
 
 impl Benchmark for BenchmarkDecompression {
-    fn run_iter(&self) {
+    fn run_iter(&self) -> anyhow::Result<()> {
         let mut output = vec![];
-        lzma_rs::lzma_decompress(&mut Cursor::new(&self.buffer_for_decompession), &mut output)
-            .unwrap();
+        lzma_rs::lzma_decompress(&mut Cursor::new(&self.buffer_for_decompession), &mut output)?;
+
+        Ok(())
     }
 
     fn name(&self) -> &'static str {

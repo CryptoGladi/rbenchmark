@@ -15,11 +15,13 @@ impl Default for BenchmarkCompression {
 }
 
 impl Benchmark for BenchmarkCompression {
-    fn run_iter(&self) {
+    fn run_iter(&self) -> anyhow::Result<()> {
         let mut reader_buf = BufReader::new(Cursor::new(&self.buffer_for_compession));
         let mut writer_buf = BufWriter::new(vec![]);
 
-        lzma_rs::lzma_compress(&mut reader_buf, &mut writer_buf).unwrap();
+        lzma_rs::lzma_compress(&mut reader_buf, &mut writer_buf)?;
+
+        Ok(())
     }
 
     fn name(&self) -> &'static str {
