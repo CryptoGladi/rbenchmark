@@ -49,6 +49,6 @@ mod tests {
     #[test]
     fn run_iter() {
         let bench = BenchmarkDecompression::default();
-        bench.run_iter();
+        bench.run_iter().unwrap();
     }
 }

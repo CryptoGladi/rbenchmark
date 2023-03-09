@@ -36,6 +36,6 @@ mod tests {
     #[test]
     fn run_iter() {
         let bench = BenchmarkCompression::default();
-        bench.run_iter();
+        bench.run_iter().unwrap();
     }
 }

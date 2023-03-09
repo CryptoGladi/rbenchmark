@@ -1,19 +1,21 @@
 use crate::benchmark::Benchmark;
 
+#[derive(Debug, Default)]
 pub struct BenchmarkDatabase;
-
-impl Default for BenchmarkDatabase {
-    fn default() -> Self {
-        Self {
-            
-        }
-    }
-}
 
 impl Benchmark for BenchmarkDatabase {
     fn run_iter(&self) -> anyhow::Result<()> {
         let sqlite = sqlite::open(":memory:")?;
-        sqlite.execute("")?; // TODO
+        sqlite.execute(
+            "CREATE TABLE Persons (
+            PersonID int,
+            LastName varchar(255),
+            FirstName varchar(255),
+            Address varchar(255),
+            City varchar(255)
+        );",
+        )?;
+        sqlite.execute("INSERT INTO Persons (PersonID, LastName, FirstName, Address, City) VALUES ('421', 'Crypto', 'Gladi', 'USA', 'Penza')")?;
 
         Ok(())
     }
