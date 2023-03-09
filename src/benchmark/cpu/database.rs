@@ -1,11 +1,14 @@
+use std::sync::Mutex;
 use crate::benchmark::Benchmark;
 
-#[derive(Debug, Default)]
-pub struct BenchmarkDatabase;
+pub struct BenchmarkDatabase {
+    pub sqlite: Mutex<sqlite::Connection>,
+}
 
-impl Benchmark for BenchmarkDatabase {
-    fn run_iter(&self) -> anyhow::Result<()> {
-        let sqlite = sqlite::open(":memory:")?;
+impl Default for BenchmarkDatabase {
+    fn default() -> Self { 
+        let sqlite = sqlite::open(":memory:").unwrap();
+
         sqlite.execute(
             "CREATE TABLE Persons (
             PersonID int,
@@ -14,8 +17,19 @@ impl Benchmark for BenchmarkDatabase {
             Address varchar(255),
             City varchar(255)
         );",
-        )?;
-        sqlite.execute("INSERT INTO Persons (PersonID, LastName, FirstName, Address, City) VALUES ('421', 'Crypto', 'Gladi', 'USA', 'Penza')")?;
+        ).unwrap();
+
+        Self {
+            sqlite: Mutex::new(sqlite)
+        }
+    }
+}
+
+impl Benchmark for BenchmarkDatabase {
+    fn run_iter(&self) -> anyhow::Result<()> {
+        for _ in 0..4000 {
+            self.sqlite.lock().unwrap().execute("INSERT INTO Persons (PersonID, LastName, FirstName, Address, City) VALUES ('421', 'Crypto', 'Gladi', 'USA', 'Penza')")?;
+        }
 
         Ok(())
     }

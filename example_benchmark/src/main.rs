@@ -1,31 +1,40 @@
-use indicatif::{ProgressBar, ProgressState, ProgressStyle};
+use indicatif::{ProgressBar, ProgressStyle};
+use rbenchmark::benchmark::Benchmark;
 use rbenchmark::prelude::*;
-use std::thread;
 use std::time::Duration;
-use std::{cmp::min, fmt::Write};
 
 fn main() {
     let mut runner = BenchmarkRunner::default();
     let count_bench = runner.benchmarks.len() * 2;
 
-    let mut pb = ProgressBar::new(count_bench as u64);
-    pb.set_style(ProgressStyle::with_template("{spinner:.green} [{wide_bar:.cyan/blue}] {pos:>7}/{len:7} {msg}")
+    let pb = ProgressBar::new(count_bench as u64);
+    pb.set_style(
+        ProgressStyle::with_template(
+            "{spinner:.green} [{wide_bar:.cyan/blue}] {pos:>7}/{len:7} {msg}",
+        )
         .unwrap()
-        .progress_chars("#>-"));
+        .progress_chars("#>-"),
+    );
+    pb.enable_steady_tick(Duration::from_millis(200));
+    pb.reset();
 
-    runner.callback = Box::new(|progress| {
-        match progress {
-            DoneSinglethreadBenchmark(bench) => { pb.inc(1); },
-            DoneMultithreadBenchmark(bench) => todo!(),
-            _ => {},
-        }
-    });
+    let change_name_bench = |bench: &dyn Benchmark, is_singlethread: bool| {
+        pb.inc(1);
 
-    pb.set_message(format!("bench: {}", 2 + 1));
+        pb.set_message(match is_singlethread {
+            true => format!("singlethread bench: {}", bench.name()),
+            false => format!("multithread bench: {}", bench.name())
+        });
+    };
+
+    let info = runner
+        .run_all(|progress| match progress {
+            DoneSinglethreadBenchmark(bench) => change_name_bench(bench, true),
+            DoneMultithreadBenchmark(bench) => change_name_bench(bench, false),
+            _ => {}
+        })
+        .unwrap();
     pb.finish();
-
-    println!("Start all benchmark!");
-    let info = runner.run_all().unwrap();
 
     println!("Info about test: {:?}", info);
     println!("Total points: {}", info.total_points());

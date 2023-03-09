@@ -13,14 +13,13 @@ pub trait Benchmark: Send + Sync {
     fn name(&self) -> &'static str;
 }
 
-pub struct BenchmarkRunner<'a> {
-    pub benchmarks: Vec<Box<dyn Benchmark + 'a>>,
+pub struct BenchmarkRunner {
+    pub benchmarks: Vec<Box<dyn Benchmark>>,
     pub time_for_run_one_bench: Duration,
     pub num_cpus: usize,
-    pub callback: Box<dyn FnMut(Progress<'a>) + 'a>,
 }
 
-impl<'a> Default for BenchmarkRunner<'a> {
+impl Default for BenchmarkRunner {
     fn default() -> Self {
         use cpu::prelude::*;
         Self {
@@ -32,7 +31,6 @@ impl<'a> Default for BenchmarkRunner<'a> {
             ],
             time_for_run_one_bench: Duration::from_secs(5),
             num_cpus: num_cpus::get(),
-            callback: Box::new(|_| {}),
         }
     }
 }
@@ -70,12 +68,12 @@ pub enum Progress<'a> {
     DoneMultithreadBenchmark(&'a dyn Benchmark),
 }
 
-impl<'a> BenchmarkRunner<'a> {
-    pub fn run_only_singlethread(&mut self, info: &mut HashMap<&str, InfoOneBench>) -> anyhow::Result<Duration> {
+impl<'a> BenchmarkRunner {
+    pub fn run_only_singlethread(&mut self, info: &mut HashMap<&str, InfoOneBench>, mut callback: impl FnMut(Progress) + 'a) -> anyhow::Result<Duration> {
         let start = Instant::now();
 
         for bench in self.benchmarks.iter() {
-            (self.callback)(Progress::StartingSinglethreadBenchmark(bench.as_ref()));
+            (callback)(Progress::StartingSinglethreadBenchmark(bench.as_ref()));
 
             let points = macros::benchmark_loop_for_singlethread(
                 self.time_for_run_one_bench,
@@ -89,17 +87,17 @@ impl<'a> BenchmarkRunner<'a> {
                     singlethread_points: points,
                     multithread_points: 0,
                 });
-            (self.callback)(Progress::DoneSinglethreadBenchmark(bench.as_ref()));
+            (callback)(Progress::DoneSinglethreadBenchmark(bench.as_ref()));
         }
 
         Ok(start.elapsed())
     }
 
-    pub fn run_only_multithread(&mut self, info: &mut HashMap<&str, InfoOneBench>) -> anyhow::Result<Duration> {
+    pub fn run_only_multithread(&mut self, info: &mut HashMap<&str, InfoOneBench>, mut callback: impl FnMut(Progress) + 'a) -> anyhow::Result<Duration> {
         let start = Instant::now();
 
     for bench in self.benchmarks.iter() {
-        (self.callback)(Progress::StartingMultithreadBenchmark(bench.as_ref()));
+        (callback)(Progress::StartingMultithreadBenchmark(bench.as_ref()));
         let points = macros::benchmark_loop_for_multithread(
             self.time_for_run_one_bench,
             bench.as_ref(),
@@ -113,18 +111,18 @@ impl<'a> BenchmarkRunner<'a> {
                 singlethread_points: 0,
                 multithread_points: points,
             });
-        (self.callback)(Progress::DoneMultithreadBenchmark(bench.as_ref()));
+        (callback)(Progress::DoneMultithreadBenchmark(bench.as_ref()));
     }
 
     Ok(start.elapsed())
     }
 
-    pub fn run_all(&'a mut self) -> anyhow::Result<Info> {
+    pub fn run_all(&mut self, mut callback: impl FnMut(Progress) + 'a) -> anyhow::Result<Info> {
         let mut info_for_any_bench: HashMap<&str, InfoOneBench> =
             HashMap::with_capacity(self.benchmarks.len());
             
-        let time_for_singlethread = self.run_only_singlethread(&mut info_for_any_bench)?;
-        let time_for_multithread = self.run_only_multithread(&mut info_for_any_bench)?;
+        let time_for_singlethread = self.run_only_singlethread(&mut info_for_any_bench, &mut callback)?;
+        let time_for_multithread = self.run_only_multithread(&mut info_for_any_bench, &mut callback)?;
 
         Ok(Info {
             time: time_for_multithread + time_for_singlethread,
@@ -144,7 +142,7 @@ mod tests {
             ..Default::default()
         };
 
-        runner.run_all().unwrap();
+        runner.run_all(|_| {}).unwrap();
 
         //let i = runner.run_all().unwrap();
     }
