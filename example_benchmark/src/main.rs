@@ -4,6 +4,7 @@ use std::time::Duration;
 
 fn main() {
     let mut runner = BenchmarkRunner::default();
+    
     let count_bench = runner.benchmarks.len() * 2;
 
     let pb = ProgressBar::new(count_bench as u64);

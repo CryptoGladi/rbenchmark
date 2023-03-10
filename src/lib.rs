@@ -20,6 +20,7 @@
 //! * Set the [`time`](crate::benchmark_runner::BenchmarkRunner::time_for_run_one_bench) of the benchmark
 //! * Multi-core support
 //! * Adjust which benchmarks to run
+//! * Callback functions
 
 pub mod benchmark;
 pub mod benchmark_runner;

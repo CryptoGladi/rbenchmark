@@ -2,6 +2,14 @@
 name = "rbenchmark"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+authors = ["CryptoGladi <mymamchm@mail.ru>"]
+publish = true
+description = "Library for evaluating the performance of your computer"
+repository = "https://github.com/CryptoGladi/file-hashing"
+keywords = ["cpu", "cpu-benchmark", "benchmark"]
+categories = ["development-tools", ""]
+readme = "README.md"
 
 [dependencies]
 byte-unit = "4"
