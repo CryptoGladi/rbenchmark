@@ -1,26 +1,28 @@
-use std::sync::Mutex;
 use crate::benchmark::Benchmark;
+use std::sync::Mutex;
 
 pub struct BenchmarkDatabase {
     pub sqlite: Mutex<sqlite::Connection>,
 }
 
 impl Default for BenchmarkDatabase {
-    fn default() -> Self { 
+    fn default() -> Self {
         let sqlite = sqlite::open(":memory:").unwrap();
 
-        sqlite.execute(
-            "CREATE TABLE Persons (
+        sqlite
+            .execute(
+                "CREATE TABLE Persons (
             PersonID int,
             LastName varchar(255),
             FirstName varchar(255),
             Address varchar(255),
             City varchar(255)
         );",
-        ).unwrap();
+            )
+            .unwrap();
 
         Self {
-            sqlite: Mutex::new(sqlite)
+            sqlite: Mutex::new(sqlite),
         }
     }
 }
@@ -36,5 +38,16 @@ impl Benchmark for BenchmarkDatabase {
 
     fn name(&self) -> &'static str {
         "database"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn run_iter() {
+        let bench = BenchmarkDatabase::default();
+        bench.run_iter().unwrap();
     }
 }

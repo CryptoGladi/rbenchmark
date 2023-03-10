@@ -4,7 +4,6 @@ use std::io::Cursor;
 
 #[derive(Debug)]
 pub struct BenchmarkDecompression {
-    pub size_byte_for_decompession: u128,
     buffer_for_decompession: Vec<u8>,
 }
 
@@ -23,7 +22,6 @@ impl Default for BenchmarkDecompression {
         .unwrap();
 
         Self {
-            size_byte_for_decompession,
             buffer_for_decompession,
         }
     }

@@ -1,5 +1,4 @@
 use indicatif::{ProgressBar, ProgressStyle};
-use rbenchmark::benchmark::Benchmark;
 use rbenchmark::prelude::*;
 use std::time::Duration;
 
@@ -23,14 +22,14 @@ fn main() {
 
         pb.set_message(match is_singlethread {
             true => format!("singlethread bench: {}", bench.name()),
-            false => format!("multithread bench: {}", bench.name())
+            false => format!("multithread bench: {}", bench.name()),
         });
     };
 
     let info = runner
         .run_all(|progress| match progress {
-            DoneSinglethreadBenchmark(bench) => change_name_bench(bench, true),
-            DoneMultithreadBenchmark(bench) => change_name_bench(bench, false),
+            BenchmarkProgress::DoneSinglethreadBenchmark(bench) => change_name_bench(bench, true),
+            BenchmarkProgress::DoneMultithreadBenchmark(bench) => change_name_bench(bench, false),
             _ => {}
         })
         .unwrap();
