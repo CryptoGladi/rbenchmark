@@ -1,0 +1,26 @@
+[package]
+name = "rbenchmark"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["CryptoGladi <mymamchm@mail.ru>"]
+publish = true
+description = "Library for evaluating the performance of your computer"
+repository = "https://github.com/CryptoGladi/file-hashing"
+keywords = ["cpu", "cpu-benchmark", "benchmark"]
+categories = ["development-tools", ""]
+readme = "README.md"
+
+[dependencies]
+byte-unit = "4"
+num_cpus = "1"
+rand = "0.8"
+threadpool = "1"
+lzma-rs = "0.3"
+crossbeam = { version = "0.8", features = ["crossbeam-channel"] }
+sha2 = "0.10"
+sqlite = "0.30"
+anyhow = "1"
+
+[profile.release]
+opt-level = 3
