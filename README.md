@@ -1,8 +1,12 @@
 # rbenchmark
 
+![license](https://img.shields.io/github/license/CryptoGladi/rbenchmark?style=for-the-badge)
+![code size](https://img.shields.io/github/languages/code-size/CryptoGladi/rbenchmark?style=for-the-badge)
+![downloads](https://img.shields.io/crates/d/rbenchmark?style=for-the-badge)
+
 Library for evaluating the performance of your computer,  written in **pure Rust**
 
-# Example
+# Example :rocket:
 
 ```rust
 use rbenchmark::prelude::*;
@@ -12,7 +16,7 @@ let result = runner.run_all(|_progress | {}).unwrap();
 println!("{:?}", result);
 ```
 
-# Features
+# Features :star:
 
 * Write your own [`benchmarks`](crate::benchmark::Benchmark) and run them.
 * Write your own runner for benchmarks
