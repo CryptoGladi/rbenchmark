@@ -6,9 +6,9 @@ license = "MIT"
 authors = ["CryptoGladi <mymamchm@mail.ru>"]
 publish = true
 description = "Library for evaluating the performance of your computer"
-repository = "https://github.com/CryptoGladi/file-hashing"
+repository = "https://github.com/CryptoGladi/rbenchmark"
 keywords = ["cpu", "cpu-benchmark", "benchmark"]
-categories = ["development-tools", ""]
+categories = ["development-tools"]
 readme = "README.md"
 
 [dependencies]
