@@ -24,3 +24,7 @@ println!("{:?}", result);
 * Multi-core support
 * Adjust which benchmarks to run
 * Callback functions
+
+# Example program
+
+![render1678533482667](https://user-images.githubusercontent.com/116446344/224482340-5703a9b0-a246-4c4b-979b-b7c9c97b3c19.gif)
