@@ -3,6 +3,7 @@
 ![license](https://img.shields.io/github/license/CryptoGladi/rbenchmark?style=for-the-badge)
 ![code size](https://img.shields.io/github/languages/code-size/CryptoGladi/rbenchmark?style=for-the-badge)
 ![downloads](https://img.shields.io/crates/d/rbenchmark?style=for-the-badge)
+![build](https://img.shields.io/github/actions/workflow/status/CryptoGladi/rbenchmark/rust.yml?branch=master&style=for-the-badge)
 
 Library for evaluating the performance of your computer,  written in **pure Rust**
 
